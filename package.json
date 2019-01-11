@@ -28,6 +28,7 @@
     "dolphin": "*",
     "greenlock": "2.6.7",
     "http-proxy": "^1.17.0",
+    "le-acme-core": "2.1.4",
     "le-challenge-fs": "2.0.8",
     "le-store-certbot": "2.2.1",
     "lodash": "^4.17.11",
