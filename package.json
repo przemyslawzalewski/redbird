@@ -29,7 +29,7 @@
     "http-proxy": "^1.17.0",
     "le-challenge-fs": "^2.0.4",
     "le-store-certbot": "^2.2.1",
-    "letsencrypt": "^2.1.9",
+    "letsencrypt": "2.1.8",
     "lodash": "^4.17.11",
     "lru-cache": "^4.1.5",
     "node-etcd": "^7.0.0",
