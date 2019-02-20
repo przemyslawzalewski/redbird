@@ -1,6 +1,6 @@
 # Redbird Reverse Proxy
 
-## With built-in Cluster, HTTP2, [LetsEncrypt](https://letsencrypt.org/) and [Docker](https://www.docker.com/) support
+## With built-in Cluster, and HTTP2 support
 
 
 ![redbird](http://cliparts.co/cliparts/6cr/o9d/6cro9dRzi.jpg)
@@ -20,12 +20,7 @@ Developed by [manast](http://twitter.com/manast)
 ## SUPER HOT
 
 Support for HTTP2. You can now enable HTTP2 just by setting the HTTP2 flag to true. Keep in mind that HTTP2 requires
-SSL/TLS certificates. Thankfully we also support LetsEncrypt so this becomes easy as pie.
-
-## HOT
-
-We have now support for automatic generation of SSL certificates using [LetsEncrypt](#letsencrypt). Zero config setup for your
-TLS protected services that just works.
+SSL/TLS certificates.
 
 ## Features
 
@@ -36,7 +31,6 @@ TLS protected services that just works.
 - Automatic TLS Certificates generation and renewal
 - Load balancer
 - Register and unregister routes programmatically without restart (allows zero downtime deployments)
-- Docker support for automatic registration of running containers
 - Cluster support that enables automatic multi-process
 - Based on top of rock-solid node-http-proxy and battle tested on production in many sites
 - Optional logging based on bunyan
@@ -82,56 +76,13 @@ proxy.register("balance.me", "http://172.17.40.6:8080");
 proxy.register("balance.me", "http://172.17.41.6:8080");
 proxy.register("balance.me", "http://172.17.42.6:8080");
 proxy.register("balance.me", "http://172.17.43.6:8080");
-
-
-// LetsEncrypt support
-// With Redbird you can get zero conf and automatic SSL certificates for your domains
-redbird.register('example.com', 'http://172.60.80.2:8082', {
-  ssl: {
-    letsencrypt: {
-      email: 'john@example.com', // Domain owner/admin email
-      production: true, // WARNING: Only use this flag when the proxy is verified to work correctly to avoid being banned!
-    }
-  }
-});
-
-//
-// LetsEncrypt requires a minimal web server for handling the challenges, this is by default on port 3000
-// it can be configured when initiating the proxy. This web server is only used by Redbird internally so most of the time
-// you  do not need to do anything special other than avoid having other web services in the same host running
-// on the same port.
-
-//
-// HTTP2 Support using LetsEncrypt for the certificates
-//
-var proxy = require('redbird')({
-  port: 80, // http port is needed for LetsEncrypt challenge during request / renewal. Also enables automatic http->https redirection for registered https routes. 
-  letsencrypt: {
-    path: __dirname + '/certs',
-    port: 9999 // LetsEncrypt minimal web server port for handling challenges. Routed 80->9999, no need to open 9999 in firewall. Default 3000 if not defined.
-  },
-  ssl: {
-    http2: true,
-    port: 443, // SSL port used to serve registered https routes with LetsEncrypt certificate.
-  }
-});
-
 ```
 ## About HTTPS
 
 The HTTPS proxy supports virtual hosts by using SNI (which most modern browsers support: IE7 and above).
 The proxying is performed by hostname, so you must use the same SSL certificates for a given hostname independently of its paths.
 
-### LetsEncrypt
-
-Some important considerations when using LetsEncrypt. You need to agree to LetsEncrypt [terms of service](https://letsencrypt.org/documents/LE-SA-v1.0.1-July-27-2015.pdf). When using
-LetsEncrypt, the obtained certificates will be copied to disk to the specified path. Its your responsibility to backup, or save persistently when applicable. Keep in mind that
-these certificates needs to be handled with care so that they cannot be accessed by malicious users. The certificates will be renewed every
-2 months automatically forever.
-
 ## HTTPS Example
-
-(NOTE: This is a legacy example not needed when using LetsEncrypt)
 
 Conceptually HTTPS is easy, but it is also easy to struggle getting it right. With Redbird its straightforward, check this complete example:
 
@@ -235,7 +186,7 @@ var redbird = new require('redbird')({
 			ip: '123.45.67.11', // assigned to my-other-domain.com
 			key: 'certs/my-other-domain.key',
 			cert: 'certs/my-other-domain.crt',
-		}				
+		}
 	]
 });
 
@@ -253,50 +204,6 @@ redbird.register('my-other-domain.com', 'http://192.168.0.12:8001', {
 	}
 });
 ```
-
-## Docker support
-If you use docker, you can tell Redbird to automatically register routes based on image
-names. You register your image name and then every time a container starts from that image,
-it gets registered, and unregistered if the container is stopped. If you run more than one
-container from the same image, Redbird will load balance following a round-robin algorithm:
-
-```js
-var redbird = require('redbird')({
-  port: 8080,
-});
-
-var docker = require('redbird').docker;
-docker(redbird).register("old.api.com", 'company/api:v1.0.0');
-docker(redbird).register("stable.api.com", 'company/api:v2.*');
-docker(redbird).register("preview.api.com", 'company/api:v[3-9].*');
-```
-
-## etcd backend
-Redbird can use [node-etcd](https://github.com/stianeikeland/node-etcd) to automatically create proxy records from an etcd cluster. Configuration
-is accomplished by passing an array of [options](https://github.com/stianeikeland/node-etcd#constructor-options), plus the hosts and path variables,
-which define which etcd cluster hosts, and which directory within those hosts, that Redbird should poll for updates.
-
-```js
-var redbird = require('redbird')({
-  port:8080
-});
-
-var options = {
-  hosts: ['localhost:2379'], // REQUIRED - you must define array of cluster hosts
-	path: ['redbird'], // OPTIONAL - path to etcd keys
-	... // OPTIONAL - pass in node-etcd connection options
-}
-require('redbird').etcd(redbird,options);
-```
-etcd records can be created in one of two ways, either as a target destination pair:
-```/redbird/example.com			"8.8.8.8"```
-or by passing a JSON object containing multiple hosts, and Redbird options:
-```
-/redbird/derek.com				{ "hosts" : ["10.10.10.10", "11.11.11.11"]}
-/redbird/johnathan.com    { "ssl" : true }
-/redbird/jeff.com         { "docker" : "alpine/alpine:latest" }
-```
-
 
 ## Cluster support
 Redbird supports automatic node cluster generation. To use, just specify the number
@@ -402,33 +309,33 @@ setTimeout(function() {
 
 ## Replacing the default HTTP/HTTPS server modules
 
-By passing `serverModule: module` or `ssl: {serverModule : module}` you can override the default http/https 
+By passing `serverModule: module` or `ssl: {serverModule : module}` you can override the default http/https
 servers used to listen for connections with another module.
 
-One application for this is to enable support for PROXY protocol: This is useful if you want to use a module like 
-[findhit-proxywrap](https://github.com/findhit/proxywrap) to enable support for the 
+One application for this is to enable support for PROXY protocol: This is useful if you want to use a module like
+[findhit-proxywrap](https://github.com/findhit/proxywrap) to enable support for the
 [PROXY protocol](http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt).
- 
-                                                                  
-PROXY protocol is used in tools like HA-Proxy, and can be optionally enabled in Amazon ELB load balancers to pass the 
-original client IP when proxying TCP connections (similar to an X-Forwarded-For header, but for raw TCP). This is useful 
-if you want to run redbird on AWS behind an ELB load balancer, but have redbird terminate any HTTPS connections so you 
-can have SNI/Let's Encrypt/HTTP2support. With this in place Redbird will see the client's IP address rather 
+
+
+PROXY protocol is used in tools like HA-Proxy, and can be optionally enabled in Amazon ELB load balancers to pass the
+original client IP when proxying TCP connections (similar to an X-Forwarded-For header, but for raw TCP). This is useful
+if you want to run redbird on AWS behind an ELB load balancer, but have redbird terminate any HTTPS connections so you
+can have SNI/Let's Encrypt/HTTP2support. With this in place Redbird will see the client's IP address rather
 than the load-balancer's, and pass this through in an X-Forwarded-For header.
 
 ````javascript
 //Options for proxywrap. This means the proxy will also respond to regular HTTP requests without PROXY information as well.
-proxy_opts = {strict: false}; 
+proxy_opts = {strict: false};
 proxyWrap = require('findhit-proxywrap');
 var opts = {
     port: process.env.HTTP_PORT,
     serverModule: proxyWrap.proxy( require('http'), proxy_opts),
     ssl: {
         //Do this if you want http2:
-        http2: true,        
+        http2: true,
         serverModule: proxyWrap.proxy(require('spdy').server, proxy_opts),
         //Do this if you only want regular https
-        // serverModule: proxyWrap.proxy( require('http'), proxy_opts), 
+        // serverModule: proxyWrap.proxy( require('http'), proxy_opts),
         port: process.env.HTTPS_PORT,
     }
 }
@@ -481,7 +388,7 @@ __Arguments__
         If you want to disable bunyan, just set this option to false. Keep in mind that
         having logs enabled incours in a performance penalty of about one order of magnitude per request.
         resolvers: {Function | Array}  a list of custom resolvers. Can be a single function or an array of functions. See more details about resolvers above.
-        serverModule : {Module} Optional - Override the http server module used to listen for http connections.  Default is require('http') 
+        serverModule : {Module} Optional - Override the http server module used to listen for http connections.  Default is require('http')
 	}
 ```
 

@@ -37,7 +37,7 @@ describe("Route registration", function () {
 			redbird.unregister('example.com', '192.168.1.2:8080');
 
 			return redbird.resolve('example.com');
-			
+
 		})
 		.then(function (result) {
 			expect(result).to.be.an("undefined")
@@ -55,7 +55,7 @@ describe("Route registration", function () {
 		return redbird.resolve('Example.com').then(function (target) {
 			expect(target).to.be.an("object");
 			expect(target.urls[0].hostname).to.be.equal('192.168.1.2');
-	
+
 			redbird.close();
 		});
 	});
@@ -169,7 +169,7 @@ describe("Route registration", function () {
 		})
 		.then(function (result) {
 			expect(result).to.be.an("undefined")
-			
+
 			redbird.close();
 		});
 	})
@@ -200,7 +200,7 @@ describe("Route resolution", function () {
 			expect(route.path).to.be.eql('/foo')
 			expect(route.urls.length).to.be.eql(1);
 			expect(route.urls[0].href).to.be.eql('http://192.168.1.3:8080/');
-	
+
 			redbird.close();
 		});
 	})
@@ -220,7 +220,7 @@ describe("Route resolution", function () {
 			expect(route.path).to.be.eql('/foo/baz')
 			expect(route.urls.length).to.be.eql(1);
 			expect(route.urls[0].href).to.be.eql('http://192.168.1.7:8080/');
-	
+
 			redbird.close();
 		});
 	})
@@ -300,124 +300,17 @@ describe("Route resolution", function () {
 		var req = { url: '/foo/baz/a/b/c' }
 		return redbird.resolve('example.com', '/qux/a/b/c').then(function (route) {
 			expect(route.path).to.be.eql('/');
-			
+
 			return redbird._getTarget('example.com', req);
 		})
 		.then(function (target) {
 			expect(target.href).to.be.eql('http://192.168.1.3:8080/a/b')
 			expect(req.url).to.be.eql('/a/b/baz/a/b/c')
-	
+
 			redbird.close();
 		});
 	})
 })
-
-describe("TLS/SSL", function () {
-	it("should allow TLS/SSL certificates", function () {
-		var redbird = Redbird({
-			ssl: {
-				port: 4430
-			},
-			bunyan: false
-		});
-
-		expect(redbird.routing).to.be.an("object");
-		redbird.register('example.com', '192.168.1.1:8080', {
-			ssl: {
-				key: 'dummy',
-				cert: 'dummy'
-			}
-		});
-
-		redbird.register('example.com', '192.168.1.2:8080');
-
-		expect(redbird.certs).to.be.an("object");
-		expect(redbird.certs['example.com']).to.be.an("object");
-
-		redbird.unregister('example.com', '192.168.1.1:8080');
-
-		return redbird.resolve('example.com').then(function (result) {
-			expect(result).to.not.be.an("undefined")
-			expect(redbird.certs['example.com']).to.not.be.an("undefined");
-			redbird.unregister('example.com', '192.168.1.2:8080');
-
-			return redbird.resolve('example.com');
-		})
-		.then(function (result) {
-			expect(result).to.be.an("undefined")
-			expect(redbird.certs['example.com']).to.be.an("undefined");
-		});
-
-	})
-	it('Should bind https servers to different ip addresses', function(testDone) {
-
-		var isPortTaken = function(port, ip, done) {
-		  var net = require('net')
-		  var tester = net.createServer()
-		  .once('error', function (err) {
-		    if (err.code != 'EADDRINUSE') return done(err)
-		    done(null, true)
-		  })
-		  .once('listening', function() {
-		    tester.once('close', function() { done(null, false) })
-		    .close()
-		  })
-		  .listen(port, ip)
-		}
-
-		var redbird = Redbird({
-		    bunyan: false,
-			port: 8080,
-
-		    // Specify filenames to default SSL certificates (in case SNI is not supported by the
-		    // user's browser)
-		    ssl: [
-				{
-					port: 4433,
-					key: 'dummy',
-					cert: 'dummy',
-					ip: '127.0.0.1'
-				},
-				{
-					port: 4434,
-					key: 'dummy',
-					cert: 'dummy',
-					ip: '127.0.0.1'
-				}
-		    ]
-		});
-
-		redbird.register('mydomain.com', 'http://127.0.0.1:8001', {
-			ssl: {
-				key: 'dummy',
-				cert: 'dummy',
-				ca: 'dummym'
-			}
-		});
-
-		var portsTaken = 0;
-		var portsChecked = 0;
-
-		function portsTakenDone(err, taken) {
-			portsChecked++;
-			if (err) { throw err; }
-			if (taken) { portsTaken++; }
-			if ( portsChecked == 2 ) {
-				portsCheckDone();
-			}
-		}
-
-		function portsCheckDone() {
-			expect(portsTaken).to.be.eql(2);
-			redbird.close();
-			testDone();
-		}
-
-		isPortTaken(4433, '127.0.0.1', portsTakenDone);
-		isPortTaken(4434, '127.0.0.1', portsTakenDone);
-	});
-})
-
 
 describe("Load balancing", function () {
 	it("should load balance between several targets", function () {
@@ -433,7 +326,7 @@ describe("Load balancing", function () {
 		expect(redbird.routing['example.com'][0].urls.length).to.be.eql(4);
 		expect(redbird.routing['example.com'][0].rr).to.be.eql(0);
 
-		
+
 		return redbird.resolve('example.com', '/foo/qux/a/b/c').then(function (route) {
 			expect(route.urls.length).to.be.eql(4);
 
