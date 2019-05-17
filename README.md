@@ -33,7 +33,6 @@ SSL/TLS certificates.
 - Register and unregister routes programmatically without restart (allows zero downtime deployments)
 - Cluster support that enables automatic multi-process
 - Based on top of rock-solid node-http-proxy and battle tested on production in many sites
-- Optional logging based on bunyan
 
 ## Install
 
@@ -217,18 +216,6 @@ var redbird = new require('redbird')({
 });
 ```
 
-## NTLM support
-If you need NTLM support, you can tell Redbird to add the required header handler. This
-registers a response handler which makes sure the NTLM auth header is properly split into
-two entries from http-proxy.
-
-```js
-var redbird = new require('redbird')({
-  port: 8080,
-  ntlm: true
-});
-```
-
 ## Custom Resolvers
 
 With custom resolvers, you can decide how the proxy server handles request. Custom resolvers allow you to extend Redbird considerably. With custom resolvers, you can perform the following:
@@ -384,9 +371,6 @@ __Arguments__
             http2: false, //Optional, setting to true enables http2/spdy support
             serverModule : require('https') // Optional, override the https server module used to listen for https or http2 connections.  Default is require('https') or require('spdy')
     	}
-        bunyan: {Object} Bunyan options. Check [bunyan](https://github.com/trentm/node-bunyan) for info.
-        If you want to disable bunyan, just set this option to false. Keep in mind that
-        having logs enabled incours in a performance penalty of about one order of magnitude per request.
         resolvers: {Function | Array}  a list of custom resolvers. Can be a single function or an array of functions. See more details about resolvers above.
         serverModule : {Module} Optional - Override the http server module used to listen for http connections.  Default is require('http')
 	}
