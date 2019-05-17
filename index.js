@@ -275,7 +275,7 @@ const ReverseProxy = ({
     return server;
   }
 
-  const server = setupHttpProxy(proxy, log);
+  const server = setupHttpProxy(proxy);
 
   server.listen(port, host);
 
